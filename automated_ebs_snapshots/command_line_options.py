@@ -101,8 +101,7 @@ admin_actions_ag.add_argument(
     metavar='FILE_NAME',
     help=(
         'Add all EBS volumes in to the watch list based on'
-        ' the rules in config file. '
-        'Usage: --backup subnet.yml'))
+        ' the rules in config file. Usage: --backup subnet.yml'))
 admin_actions_ag.add_argument(
     '--list-backup',
     action='count',

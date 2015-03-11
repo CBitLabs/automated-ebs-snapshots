@@ -8,7 +8,7 @@ from automated_ebs_snapshots.command_line_options import args
 from automated_ebs_snapshots import backup_manager
 from automated_ebs_snapshots import config_file_parser
 from automated_ebs_snapshots import connection_manager
-from automated_ebs_snapshots import extended_snapshot_manager as snapshot_manager
+from automated_ebs_snapshots import snapshot_manager
 from automated_ebs_snapshots import volume_manager
 from automated_ebs_snapshots.daemon import Daemon
 

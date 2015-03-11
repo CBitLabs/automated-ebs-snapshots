@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-""" Handle EBS volumes """
 import logging
 import re
 import yaml
@@ -35,8 +34,10 @@ def subnet_of_volume(connection, volume):
     instance_id = volume.attach_data.instance_id
     inst = get_instance_by_id(connection, instance_id)
     if 'subnet' in inst.tags:
+        # Instance has subnet tag
         return inst.tags['subnet']
     elif 'Name' in inst.tags:
+        # Parse instance name(VPC.SUBNET:HOST)
         name = inst.tags['Name']
         name_patten = re.compile('[0-9a-z]+\.([0-9a-z]+):[0-9a-z]+')
         if name_patten.match(name):
@@ -58,6 +59,7 @@ def tag_rule_for_volume(connection, volume_id, rule):
     # Remove the tag first
     volume.remove_tag('AutomatedEBSSnapshots')
     # Re-add the tag
+    # Tag is in such format: interval1:retention1,interval2:retention2
     tag = ','.join(['%s:%s'% (k, v) for k, v in rule.items()])
     volume.add_tag('AutomatedEBSSnapshots', value=tag)
 
@@ -88,9 +90,12 @@ def add_backup_rules(connection, config_file):
             # Use subnet rules
             subnet = subnet_of_volume(connection, vol)
             if not subnet:
+                # We cannot recognize its subnet
                 continue
+                # We don't want to backup its subnet
             if subnet not in config['rules']:
                 continue
+            # Add tag for vol
             tag_rule_for_volume(connection, vol.id, config['rules'][subnet])
 
 
