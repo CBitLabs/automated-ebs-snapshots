@@ -5,9 +5,10 @@ import time
 import sys
 
 from automated_ebs_snapshots.command_line_options import args
+from automated_ebs_snapshots import backup_manager
 from automated_ebs_snapshots import config_file_parser
 from automated_ebs_snapshots import connection_manager
-from automated_ebs_snapshots import snapshot_manager
+from automated_ebs_snapshots import extended_snapshot_manager as snapshot_manager
 from automated_ebs_snapshots import volume_manager
 from automated_ebs_snapshots.daemon import Daemon
 
@@ -169,3 +170,12 @@ def main():
 
     if args.run:
         snapshot_manager.run(connection)
+
+    if args.backup:
+        backup_manager.add_backup_rules(connection, args.backup)
+
+    if args.unbackup:
+        backup_manager.remove_backup_rules(connection)
+
+    if args.list_backup:
+        backup_manager.list_buckup_rules(connection)

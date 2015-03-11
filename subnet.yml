@@ -1,0 +1,28 @@
+---
+# Rules: Define interval(hourly, daily, weekly, monthly or yearly)
+#        and retention(Number of snapshots to keep) for each subnet
+# Support stacking rules.
+rules:
+    ops:
+        weekly: 3
+    prd1:
+        daily: 6
+        weekly: 3
+    dmz1:
+        daily: 6
+        weekly: 3
+    dmz2:
+        daily: 6
+        weekly: 3
+    dmz3:
+        daily: 6
+        weekly: 3
+    stg1:
+        weekly: 3
+# Exceptions: volumes that need to backup but don't follow above rules
+exceptions:
+    vol-d9d6d6af:
+        hourly: 2
+        daily: 1
+# Blacklist: volumes that we don't want to backup
+blacklist:

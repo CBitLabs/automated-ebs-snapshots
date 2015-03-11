@@ -90,6 +90,25 @@ admin_actions_ag.add_argument(
     help=(
         'Add all EBS volumes in the config file to the watch list. '
         'Usage: --watch-file volumes.conf'))
+admin_actions_ag.add_argument(
+    '--unbackup',
+    action='count',
+    help=(
+        'Remove all EBS volumes from the watch list. '
+        'Usage: --unbackup'))
+admin_actions_ag.add_argument(
+    '--backup',
+    metavar='FILE_NAME',
+    help=(
+        'Add all EBS volumes in to the watch list based on'
+        ' the rules in config file. '
+        'Usage: --backup subnet.yml'))
+admin_actions_ag.add_argument(
+    '--list-backup',
+    action='count',
+    help=(
+        'List backup rules for all EBS volumes from the watch list. '
+        'Usage: --list-backup'))
 
 actions_ag = parser.add_argument_group(
     title='Actions')
