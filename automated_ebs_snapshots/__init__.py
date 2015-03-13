@@ -64,7 +64,7 @@ if args.log_file:
         'formatter': 'standard',
         'filename': args.log_file,
         'when': 'midnight',
-        'backupCount': 5
+        'backupCount': 7
     }
 
     for logger in LOG_CONFIG['loggers'].keys():

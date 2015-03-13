@@ -60,7 +60,7 @@ def tag_rule_for_volume(connection, volume_id, rule):
     volume.remove_tag('AutomatedEBSSnapshots')
     # Re-add the tag
     # Tag is in such format: interval1:retention1,interval2:retention2
-    tag = ','.join(['%s:%s'% (k, v) for k, v in rule.items()])
+    tag = ','.join(['%s:%s' % (k, v) for k, v in rule.items()])
     volume.add_tag('AutomatedEBSSnapshots', value=tag)
 
     logger.info('Updated the backup rule %s to for %s' % (tag, volume_id))

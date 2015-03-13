@@ -31,13 +31,12 @@ def _create_snapshot(volume, rule):
     :param volume: Volume to snapshot
     :returns: boto.ec2.snapshot.Snapshot -- The new snapshot
     """
-    logger.info('Creating new snapshot for {} based on {}'.format(volume.id, rule))
+    logger.info('Creating new snapshot for %s based on %s' % (volume.id, rule))
     snapshot = volume.create_snapshot(
         description="Automatic snapshot by Automated EBS Snapshots")
     # Tag backup rule for the snapshot
     snapshot.add_tag('AutomatedEBSSnapshots', rule)
-    logger.info('Created snapshot {} for volume {}'.format(
-        snapshot.id, volume.id))
+    logger.info('Created snapshot %s for volume %s' % (snapshot.id, volume.id))
 
     return snapshot
 
@@ -51,7 +50,8 @@ def _ensure_snapshot_for_rule(connection, volume, rule):
                 interval, volume.id))
         return
 
-    snapshots = connection.get_all_snapshots(filters={'volume-id': volume.id,
+    snapshots = connection.get_all_snapshots(filters={
+        'volume-id': volume.id,
         'tag:AutomatedEBSSnapshots': rule})
 
     # Create a snapshot if we don't have any
@@ -97,26 +97,29 @@ def _ensure_snapshot(connection, volume):
     """
     if 'AutomatedEBSSnapshots' not in volume.tags:
         logger.warning(
-            'Missing tag AutomatedEBSSnapshots for volume {}'.format(
-                volume.id))
+            'Missing tag AutomatedEBSSnapshots for volume %s' % volume.id)
         return
 
-    if volume.tags['AutomatedEBSSnapshots'] not in VALID_INTERVALS:
+    if volume.tags['AutomatedEBSSnapshots'] in VALID_INTERVALS:
+        # Original tags
+        interval = volume.tags['AutomatedEBSSnapshots']
+        retention = volume.tags['AutomatedEBSSnapshotsRetention']
+        # Build a dump rule for calling _remove_old_snapshots_for_rule
+        dump_rule = '%s:%s' % (interval, retention)
+        _ensure_snapshot_for_rule(connection, volume, dump_rule)
+    else:
+        # Extended backup rules
         rules = volume.tags['AutomatedEBSSnapshots']
         for rule in rules.split(','):
             _ensure_snapshot_for_rule(connection, volume, rule)
-    else:
-        interval = volume.tags['AutomatedEBSSnapshots']
-        retention = volume.tags['AutomatedEBSSnapshotsRetention']
-        _ensure_snapshot_for_rule(connection, volume,
-                                  '%s:%s' % (interval, retention))
 
 
 def _remove_old_snapshots_for_rule(connection, volume, rule):
     interval, retention = rule.split(':')
 
     # Filter snapshots with the volume id and rule
-    snapshots = connection.get_all_snapshots(filters={'volume-id': volume.id,
+    snapshots = connection.get_all_snapshots(filters={
+        'volume-id': volume.id,
         'tag:AutomatedEBSSnapshots': rule})
 
     # Sort the list based on the start time
@@ -130,12 +133,11 @@ def _remove_old_snapshots_for_rule(connection, volume, rule):
         return
 
     for snapshot in snapshots:
-        logger.info('Deleting snapshot {}'.format(snapshot.id))
+        logger.info('Deleting snapshot %s based on %s' % (snapshot.id, rule))
         try:
             snapshot.delete()
         except EC2ResponseError as error:
-            logger.warning('Could not remove snapshot: {}'.format(
-                error.message))
+            logger.warning('Could not remove snapshot: %s' % error.message)
 
     logger.info('Done deleting snapshots')
 
@@ -144,16 +146,18 @@ def _remove_old_snapshots(connection, volume):
 
     if 'AutomatedEBSSnapshots' not in volume.tags:
         logger.warning(
-            'Missing tag AutomatedEBSSnapshots for volume {}'.format(
-                volume.id))
+            'Missing tag AutomatedEBSSnapshots for volume %s' % volume.id)
         return
 
-    if volume.tags['AutomatedEBSSnapshots'] not in VALID_INTERVALS:
+    if volume.tags['AutomatedEBSSnapshots'] in VALID_INTERVALS:
+        # Original tags
+        interval = volume.tags['AutomatedEBSSnapshots']
+        retention = volume.tags['AutomatedEBSSnapshotsRetention']
+        # Build a dump rule for calling _remove_old_snapshots_for_rule
+        dump_rule = '%s:%s' % (interval, retention)
+        _remove_old_snapshots_for_rule(connection, volume, dump_rule)
+    else:
+        # Extended backup rules
         rules = volume.tags['AutomatedEBSSnapshots']
         for rule in rules.split(','):
             _remove_old_snapshots_for_rule(connection, volume, rule)
-    else:
-        interval = volume.tags['AutomatedEBSSnapshots']
-        retention = volume.tags['AutomatedEBSSnapshotsRetention']
-        _remove_old_snapshots_for_rule(connection, volume,
-                                  '%s:%s' % (interval, retention))
