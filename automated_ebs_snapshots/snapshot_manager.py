@@ -1,6 +1,7 @@
 """ Module handling the snapshots """
 import logging
 import datetime
+import time
 
 from boto.exception import EC2ResponseError
 
@@ -22,6 +23,9 @@ def run(connection):
     for volume in volumes:
         _ensure_snapshot(connection, volume)
         _remove_old_snapshots(connection, volume)
+        # There is too much volumes need to backup, sleep 1 second to avoid
+        # sending too much request to AWS
+        time.sleep(1)
 
 
 def _create_snapshot(volume, rule):
