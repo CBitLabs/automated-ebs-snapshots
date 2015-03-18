@@ -10,6 +10,12 @@ from automated_ebs_snapshots import volume_manager
 logger = logging.getLogger(__name__)
 
 
+def delay():
+    # There is too much volumes need to backup, sleep 0.5 second to avoid
+    # sending too much request to AWS
+    time.sleep(0.5)
+
+
 def load_subnet_config(file_name):
     """
     Load config file: backup rules for each subnet
@@ -56,9 +62,6 @@ def tag_rule_for_volume(connection, volume_id, rule):
         logger.warning('Volume %s not found' % volume_id)
         return False
 
-    # Remove the tag first
-    volume.remove_tag('AutomatedEBSSnapshots')
-    # Re-add the tag
     # Tag is in such format: interval1:retention1,interval2:retention2
     tag = ','.join(['%s:%s' % (k, v) for k, v in rule.items()])
     volume.add_tag('AutomatedEBSSnapshots', value=tag)
@@ -97,6 +100,7 @@ def add_backup_rules(connection, config_file):
                 continue
             # Add tag for vol
             tag_rule_for_volume(connection, vol.id, config['rules'][subnet])
+        delay()
 
 
 def remove_backup_rules(connection):
@@ -108,6 +112,7 @@ def remove_backup_rules(connection):
         # Removed AutomatedEBSSnapshots tag
         vol.remove_tag('AutomatedEBSSnapshots')
         logger.info('Removed %s from the watchlist' % vol.id)
+        delay()
 
 
 def list_buckup_rules(connection):

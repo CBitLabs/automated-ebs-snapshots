@@ -11,6 +11,12 @@ from automated_ebs_snapshots.valid_intervals import VALID_INTERVALS
 logger = logging.getLogger(__name__)
 
 
+def delay():
+    # There is too much volumes need to backup, sleep 1 second to avoid
+    # sending too much request to AWS
+    time.sleep(1)
+
+
 def run(connection):
     """ Ensure that we have snapshots for a given volume
 
@@ -22,10 +28,9 @@ def run(connection):
 
     for volume in volumes:
         _ensure_snapshot(connection, volume)
+        delay()
         _remove_old_snapshots(connection, volume)
-        # There is too much volumes need to backup, sleep 1 second to avoid
-        # sending too much request to AWS
-        time.sleep(1)
+        delay()
 
 
 def _create_snapshot(volume, rule):
@@ -116,6 +121,7 @@ def _ensure_snapshot(connection, volume):
         rules = volume.tags['AutomatedEBSSnapshots']
         for rule in rules.split(','):
             _ensure_snapshot_for_rule(connection, volume, rule)
+            delay()
 
 
 def _remove_old_snapshots_for_rule(connection, volume, rule):
@@ -165,3 +171,4 @@ def _remove_old_snapshots(connection, volume):
         rules = volume.tags['AutomatedEBSSnapshots']
         for rule in rules.split(','):
             _remove_old_snapshots_for_rule(connection, volume, rule)
+            delay()

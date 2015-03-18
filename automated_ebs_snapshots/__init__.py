@@ -77,8 +77,8 @@ logger = logging.getLogger(__name__)
 class AutoEBSDaemon(Daemon):
     """ Daemon for automatic-ebs-snapshots"""
 
-    def run(self, check_interval=3600):
-        """ Run the daemon
+    def run(self, check_interval=28800):
+        """ Run the daemon every 8 hours
 
         :type check_interval: int
         :param check_interval: Delay in seconds between checks
