@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import re
+import time
 import yaml
 
 from boto.exception import EC2ResponseError
