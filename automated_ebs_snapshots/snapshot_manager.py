@@ -41,10 +41,16 @@ def _create_snapshot(volume, rule):
     :returns: boto.ec2.snapshot.Snapshot -- The new snapshot
     """
     logger.info('Creating new snapshot for %s based on %s' % (volume.id, rule))
-    snapshot = volume.create_snapshot(
-        description="Automatic snapshot by Automated EBS Snapshots")
-    # Tag backup rule for the snapshot
-    snapshot.add_tag('AutomatedEBSSnapshots', rule)
+    try:
+        snapshot = volume.create_snapshot(
+            description="Automatic snapshot by Automated EBS Snapshots")
+        # Tag backup rule for the snapshot
+        snapshot.add_tag('AutomatedEBSSnapshots', rule)
+    except EC2ResponseError as e:
+        logger.error('Failed to create snapshot for %s due to %s' %
+            (volume.id, e.error_message))
+        return None
+
     logger.info('Created snapshot %s for volume %s' % (snapshot.id, volume.id))
 
     return snapshot
@@ -114,8 +120,8 @@ def _ensure_snapshot(connection, volume):
         interval = volume.tags['AutomatedEBSSnapshots']
         retention = volume.tags['AutomatedEBSSnapshotsRetention']
         # Build a dump rule for calling _remove_old_snapshots_for_rule
-        dump_rule = '%s:%s' % (interval, retention)
-        _ensure_snapshot_for_rule(connection, volume, dump_rule)
+        pseudo_rule = '%s:%s' % (interval, retention)
+        _ensure_snapshot_for_rule(connection, volume, pseudo_rule)
     else:
         # Extended backup rules
         rules = volume.tags['AutomatedEBSSnapshots']
@@ -164,8 +170,8 @@ def _remove_old_snapshots(connection, volume):
         interval = volume.tags['AutomatedEBSSnapshots']
         retention = volume.tags['AutomatedEBSSnapshotsRetention']
         # Build a dump rule for calling _remove_old_snapshots_for_rule
-        dump_rule = '%s:%s' % (interval, retention)
-        _remove_old_snapshots_for_rule(connection, volume, dump_rule)
+        pseudo_rule = '%s:%s' % (interval, retention)
+        _remove_old_snapshots_for_rule(connection, volume, pseudo_rule)
     else:
         # Extended backup rules
         rules = volume.tags['AutomatedEBSSnapshots']

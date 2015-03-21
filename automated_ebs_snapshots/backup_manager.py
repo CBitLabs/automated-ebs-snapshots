@@ -63,9 +63,14 @@ def tag_rule_for_volume(connection, volume_id, rule):
         logger.warning('Volume %s not found' % volume_id)
         return False
 
-    # Tag is in such format: interval1:retention1,interval2:retention2
-    tag = ','.join(['%s:%s' % (k, v) for k, v in rule.items()])
-    volume.add_tag('AutomatedEBSSnapshots', value=tag)
+    try:
+        # Tag is in such format: interval1:retention1,interval2:retention2
+        tag = ','.join(['%s:%s' % (k, v) for k, v in rule.items()])
+        volume.add_tag('AutomatedEBSSnapshots', value=tag)
+    except EC2ResponseError as e:
+        logger.error('Failed to tag rule for %s due to %s' %
+            (volume_id, e.error_message))
+        return False
 
     logger.info('Updated the backup rule %s to for %s' % (tag, volume_id))
     return True
