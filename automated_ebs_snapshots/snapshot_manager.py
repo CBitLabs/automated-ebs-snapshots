@@ -26,10 +26,54 @@ def run(connection):
     """
     volumes = volume_manager.get_watched_volumes(connection)
 
+    # Delete orphan snapshots that were created one week ago
+    delete_orphan_snapshots(connection, volumes, 3600*24*7)
+
     for volume in volumes:
         _ensure_snapshot(connection, volume)
         delay()
         _remove_old_snapshots(connection, volume)
+        delay()
+
+
+def delete_orphan_snapshots(connection, volumes, min_delta):
+    """
+    Orphan snapshots whose volumes and instances were killed
+    """
+
+    def check_time_delta(time):
+        timestamp = datetime.datetime.strptime(
+            time,
+            '%Y-%m-%dT%H:%M:%S.000Z')
+        # time delta in seconds
+        delta_seconds = int(
+            (datetime.datetime.utcnow() - timestamp).total_seconds())
+        return delta_seconds > min_delta
+
+    # All ids of watching volumes
+    watchlist = map(lambda vol: vol.id, volumes)
+
+    # All automated-ebs-snapshots generated snapshots
+    snapshots = connection.get_all_snapshots(filters={
+        'tag-key': 'AutomatedEBSSnapshots'
+        })
+
+    # Get all snapshots whose volumes are not in watch list
+    orphan_snapshots = filter(
+        lambda x: x.volume_id not in watchlist, snapshots)
+    logger.info('Found %d orphan snapshots.' %
+        len(orphan_snapshots))
+
+    # Get orphan_snapshots that were created TIME_DELTA ago
+    old_orphan_snapshots = filter(
+        lambda x: check_time_delta(x.start_time), orphan_snapshots)
+    logger.info('Found %d orphan snapshots were created %s seconds ago.' %
+        (len(old_orphan_snapshots), min_delta))
+
+    # Delete old orphan snapshots
+    for snap in old_orphan_snapshots:
+        snap.delete()
+        logger.info('Delete orphan snapshot %s' % snap.id)
         delay()
 
 

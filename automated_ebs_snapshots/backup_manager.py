@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def delay():
     # There is too much volumes need to backup, sleep 0.5 second to avoid
     # sending too much request to AWS
-    time.sleep(0.5)
+    time.sleep(1)
 
 
 def load_subnet_config(file_name):
