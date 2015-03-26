@@ -3,7 +3,7 @@ import logging
 import datetime
 import time
 
-from boto.exception import EC2ResponseError
+from boto import exception
 
 from automated_ebs_snapshots import volume_manager
 from automated_ebs_snapshots.valid_intervals import VALID_INTERVALS
@@ -61,13 +61,13 @@ def delete_orphan_snapshots(connection, volumes, min_delta):
     # Get all snapshots whose volumes are not in watch list
     orphan_snapshots = filter(
         lambda x: x.volume_id not in watchlist, snapshots)
-    logger.info('Found %d orphan snapshots.' %
-        len(orphan_snapshots))
+    logger.info('Found %d orphan snapshots.' % len(orphan_snapshots))
 
     # Get orphan_snapshots that were created TIME_DELTA ago
     old_orphan_snapshots = filter(
         lambda x: check_time_delta(x.start_time), orphan_snapshots)
-    logger.info('Found %d orphan snapshots were created %s seconds ago.' %
+    logger.info(
+        'Found %d orphan snapshots were created %s seconds ago.' %
         (len(old_orphan_snapshots), min_delta))
 
     # Delete old orphan snapshots
@@ -90,8 +90,9 @@ def _create_snapshot(volume, rule):
             description="Automatic snapshot by Automated EBS Snapshots")
         # Tag backup rule for the snapshot
         snapshot.add_tag('AutomatedEBSSnapshots', rule)
-    except EC2ResponseError as e:
-        logger.error('Failed to create snapshot for %s due to %s' %
+    except exception.BotoServerError as e:
+        logger.error(
+            'Failed to create snapshot for %s due to %s' %
             (volume.id, e.error_message))
         return None
 
@@ -196,7 +197,7 @@ def _remove_old_snapshots_for_rule(connection, volume, rule):
         logger.info('Deleting snapshot %s based on %s' % (snapshot.id, rule))
         try:
             snapshot.delete()
-        except EC2ResponseError as error:
+        except exception.EC2ResponseError as error:
             logger.warning('Could not remove snapshot: %s' % error.message)
 
     logger.info('Done deleting snapshots')
