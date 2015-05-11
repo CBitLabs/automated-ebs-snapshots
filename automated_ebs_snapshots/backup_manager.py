@@ -69,7 +69,7 @@ def tag_rule_for_volume(connection, volume_id, rule):
         volume.add_tag('AutomatedEBSSnapshots', value=tag)
     except EC2ResponseError as e:
         logger.error('Failed to tag rule for %s due to %s' %
-            (volume_id, e.error_message))
+                     (volume_id, e.error_message))
         return False
 
     logger.info('Updated the backup rule %s to for %s' % (tag, volume_id))
@@ -90,6 +90,9 @@ def add_backup_rules(connection, config_file):
             continue
         if not vol.attach_data:
             # Skip if the volume is not attached to any instance
+            continue
+        if config['size_bound'] and vol.size >= config['size_bound']:
+            # Skip if the volume is large than the defined bound
             continue
         if config['exceptions'] and vol.id in config['exceptions']:
             # volume is in exception list
@@ -131,21 +134,17 @@ def list_buckup_rules(connection):
         logger.info('No watched volumes found')
         return
 
-    logger.info(
-        '+----------------'
-        '+----------------------'
-        '+----------------------+')
-    logger.info(
-        '| {volume:<14} '
-        '| {volume_name:<20.20} '
-        '| {rules:<20} |'.format(
-            volume='Volume ID',
-            volume_name='Volume name',
-            rules='Backup rules'))
-    logger.info(
-        '+----------------'
-        '+----------------------'
-        '+----------------------+')
+    logger.info('+----------------'
+                '+----------------------'
+                '+----------------------+')
+    logger.info('| {volume:<14} '
+                '| {volume_name:<20.20} '
+                '| {rules:<20} |'.format(volume='Volume ID',
+                                         volume_name='Volume name',
+                                         rules='Backup rules'))
+    logger.info('+----------------'
+                '+----------------------'
+                '+----------------------+')
 
     for volume in volumes:
         if 'AutomatedEBSSnapshots' not in volume.tags:
@@ -159,15 +158,12 @@ def list_buckup_rules(connection):
         except KeyError:
             volume_name = ''
 
-        logger.info(
-            '| {volume_id:<14} '
-            '| {volume_name:<20.20} '
-            '| {rules:<20} |'.format(
-                volume_id=volume.id,
-                volume_name=volume_name,
-                rules=rules))
+        logger.info('| {volume_id:<14} '
+                    '| {volume_name:<20.20} '
+                    '| {rules:<20} |'.format(volume_id=volume.id,
+                                             volume_name=volume_name,
+                                             rules=rules))
 
-    logger.info(
-        '+----------------'
-        '+----------------------'
-        '+----------------------+')
+    logger.info('+----------------'
+                '+----------------------'
+                '+----------------------+')
