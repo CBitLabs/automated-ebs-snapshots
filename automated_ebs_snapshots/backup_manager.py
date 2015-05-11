@@ -87,12 +87,15 @@ def add_backup_rules(connection, config_file):
     for vol in volumes:
         if config['blacklist'] and vol.id in config['blacklist']:
             # Skip if the volume is in blacklist
+            logger.info('Skip volume %s' % vol.id)
             continue
         if not vol.attach_data:
             # Skip if the volume is not attached to any instance
+            logger.info('Skip unattached volume %s' % vol.id)
             continue
         if config['size_bound'] and vol.size >= config['size_bound']:
             # Skip if the volume is large than the defined bound
+            logger.info('Skip %s GB volume %s' % (vol.size, vol.id))
             continue
         if config['exceptions'] and vol.id in config['exceptions']:
             # volume is in exception list
@@ -104,8 +107,8 @@ def add_backup_rules(connection, config_file):
             if not subnet:
                 # We cannot recognize its subnet
                 continue
-                # We don't want to backup its subnet
             if subnet not in config['rules']:
+                # We don't want to backup its subnet
                 continue
             # Add tag for vol
             tag_rule_for_volume(connection, vol.id, config['rules'][subnet])
